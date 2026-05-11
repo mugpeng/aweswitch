@@ -43,6 +43,29 @@ class AweSwitchTests(unittest.TestCase):
         self.assertEqual(env["ANTHROPIC_AUTH_TOKEN"], "secret")
         self.assertEqual(base_env.get("ANTHROPIC_MODEL"), None)
 
+    def test_prepare_claude_can_expand_from_claude_settings_env(self):
+        config = {
+            "profiles": {
+                "cc-glm": {
+                    "provider": "claude",
+                    "model": "glm-5.1",
+                    "env": {
+                        "ANTHROPIC_BASE_URL": "${ANTHROPIC_BASE_URL}",
+                        "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}",
+                    },
+                }
+            }
+        }
+        claude_settings_env = {
+            "ANTHROPIC_BASE_URL": "https://example.test",
+            "ANTHROPIC_AUTH_TOKEN": "secret",
+        }
+
+        _, env = aweswitch.prepare_run(config, "cc-glm", [], {}, claude_settings_env)
+
+        self.assertEqual(env["ANTHROPIC_BASE_URL"], "https://example.test")
+        self.assertEqual(env["ANTHROPIC_AUTH_TOKEN"], "secret")
+
     def test_prepare_claude_model_overrides_existing_environment(self):
         config = {
             "profiles": {

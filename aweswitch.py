@@ -19,6 +19,10 @@ def config_path():
     return Path(os.environ.get("AWESWITCH_CONFIG", "~/.config/aweswitch/config.json")).expanduser()
 
 
+def claude_settings_path():
+    return Path(os.environ.get("CLAUDE_SETTINGS", "~/.claude/settings.json")).expanduser()
+
+
 def die(message):
     raise SystemExit(f"aweswitch: {message}")
 
@@ -46,6 +50,20 @@ def load_config(path):
     return data
 
 
+def load_claude_settings_env(path=None):
+    path = claude_settings_path() if path is None else Path(path).expanduser()
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except json.JSONDecodeError:
+        return {}
+    env = data.get("env", {})
+    if not isinstance(env, dict):
+        return {}
+    return {key: value for key, value in env.items() if isinstance(value, str)}
+
+
 def expand_value(value, env):
     if not isinstance(value, str):
         return value
@@ -68,16 +86,20 @@ def profile_for(config, name):
     return profile
 
 
-def prepare_run(config, profile_name, user_args, base_env=None):
+def prepare_run(config, profile_name, user_args, base_env=None, claude_settings_env=None):
     base_env = dict(os.environ if base_env is None else base_env)
     profile = profile_for(config, profile_name)
     provider = profile.get("provider")
     model = profile.get("model")
     profile_env = profile.get("env", {})
     env = dict(base_env)
+    expansion_env = dict(base_env)
+    if provider == "claude":
+        settings_env = load_claude_settings_env() if claude_settings_env is None else claude_settings_env
+        expansion_env = {**settings_env, **base_env}
 
     for key, value in profile_env.items():
-        env[key] = expand_value(value, base_env)
+        env[key] = expand_value(value, expansion_env)
 
     if provider == "claude":
         if model and "ANTHROPIC_MODEL" not in profile_env:

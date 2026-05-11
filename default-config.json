@@ -4,8 +4,8 @@
       "provider": "claude",
       "model": "glm-5.1",
       "env": {
-        "ANTHROPIC_BASE_URL": "https://open.bigmodel.cn/api/anthropic",
-        "ANTHROPIC_AUTH_TOKEN": "${GLM_ANTHROPIC_AUTH_TOKEN}",
+        "ANTHROPIC_BASE_URL": "${ANTHROPIC_BASE_URL}",
+        "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}",
         "ANTHROPIC_MODEL": "glm-5.1",
         "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5.1",
         "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5.1",

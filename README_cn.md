@@ -90,8 +90,8 @@ aweswitch config edit
       "provider": "claude",
       "model": "glm-5.1",
       "env": {
-        "ANTHROPIC_BASE_URL": "${GLM_ANTHROPIC_BASE_URL}",
-        "ANTHROPIC_AUTH_TOKEN": "${GLM_ANTHROPIC_AUTH_TOKEN}",
+        "ANTHROPIC_BASE_URL": "${ANTHROPIC_BASE_URL}",
+        "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}",
         "ANTHROPIC_MODEL": "glm-5.1",
         "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5.1",
         "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5.1",
@@ -117,14 +117,15 @@ aweswitch config edit
 - Codex 的 `model` 会作为 `--model <model>` 参数传入。
 - `env` 只作用于本次启动的子进程。
 - `${VAR_NAME}` 会从当前 shell 环境变量中展开。
+- Claude profile 在 shell 没有设置 `${ANTHROPIC_*}` 时，也可以从 `~/.claude/settings.json` 的 `env` 中展开。
 
 ## 环境变量
 
-默认 `cc-glm` profile 需要：
+如果自定义 provider，需要设置 profile 中引用的变量：
 
 ```bash
-export GLM_ANTHROPIC_BASE_URL="..."
-export GLM_ANTHROPIC_AUTH_TOKEN="..."
+export ANTHROPIC_BASE_URL="..."
+export ANTHROPIC_AUTH_TOKEN="..."
 ```
 
 如果希望每次打开终端都可用，可以把这些变量放进 `~/.zshrc`。
@@ -136,4 +137,3 @@ export GLM_ANTHROPIC_AUTH_TOKEN="..."
 ```bash
 python3 tests/test_aweswitch.py
 ```
-
