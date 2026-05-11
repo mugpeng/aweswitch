@@ -116,6 +116,44 @@ aweswitch config edit
 - `${VAR_NAME}` 会从当前 shell 环境变量中展开。
 - Claude profile 在 shell 没有设置 `${ANTHROPIC_AUTH_TOKEN}` 这类 token 变量时，也可以从 `~/.claude/settings.json` 的 `env` 中展开。
 
+## Claude 模型覆盖
+
+对于 Claude profile，`ANTHROPIC_MODEL` 是主模型配置。
+
+`ANTHROPIC_DEFAULT_HAIKU_MODEL`、`ANTHROPIC_DEFAULT_SONNET_MODEL`、
+`ANTHROPIC_DEFAULT_OPUS_MODEL` 默认都不配置。
+
+如果你希望 Claude Code 对轻量任务或后台任务使用更轻的模型，可以手动在
+`~/.config/aweswitch/config.json` 里增加 `ANTHROPIC_DEFAULT_HAIKU_MODEL`。
+可以用下面的命令查看或编辑配置：
+
+```bash
+aweswitch config path
+aweswitch config show
+aweswitch config edit
+```
+
+示例：
+
+```json
+{
+  "profiles": {
+    "cc-xiaomi": {
+      "provider": "claude",
+      "env": {
+        "ANTHROPIC_BASE_URL": "https://token-plan-sgp.xiaomimimo.com/anthropic",
+        "ANTHROPIC_AUTH_TOKEN": "${XIAOMI_ANTHROPIC_AUTH_TOKEN}",
+        "ANTHROPIC_MODEL": "mimo-v2.5-pro",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "mimo-v2.5"
+      }
+    }
+  }
+}
+```
+
+这样主模型仍然使用 `mimo-v2.5-pro`，同时让 Claude Code 在轻量/后台功能上
+可以使用 `mimo-v2.5`。
+
 ## 环境变量
 
 运行 profile 前，需要配置该 profile 引用的 token 环境变量：

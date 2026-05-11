@@ -116,6 +116,44 @@ Example:
 - `${VAR_NAME}` values are expanded from your current shell environment.
 - Claude profiles can also expand token variables such as `${ANTHROPIC_AUTH_TOKEN}` from `~/.claude/settings.json` when they are not set in the shell.
 
+## Claude Model Overrides
+
+For Claude profiles, `ANTHROPIC_MODEL` is the primary model setting.
+
+`ANTHROPIC_DEFAULT_HAIKU_MODEL`, `ANTHROPIC_DEFAULT_SONNET_MODEL`, and
+`ANTHROPIC_DEFAULT_OPUS_MODEL` are not configured by default.
+
+If you want Claude Code to use a lighter model for lightweight or background
+tasks, you can manually add `ANTHROPIC_DEFAULT_HAIKU_MODEL` to
+`~/.config/aweswitch/config.json`. You can inspect or edit that file with:
+
+```bash
+aweswitch config path
+aweswitch config show
+aweswitch config edit
+```
+
+Example:
+
+```json
+{
+  "profiles": {
+    "cc-xiaomi": {
+      "provider": "claude",
+      "env": {
+        "ANTHROPIC_BASE_URL": "https://token-plan-sgp.xiaomimimo.com/anthropic",
+        "ANTHROPIC_AUTH_TOKEN": "${XIAOMI_ANTHROPIC_AUTH_TOKEN}",
+        "ANTHROPIC_MODEL": "mimo-v2.5-pro",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "mimo-v2.5"
+      }
+    }
+  }
+}
+```
+
+This keeps the main model on `mimo-v2.5-pro` while allowing Claude Code to use
+`mimo-v2.5` for lighter or background functionality.
+
 ## Environment Variables
 
 Before running a profile, configure the token environment variables referenced by that profile:

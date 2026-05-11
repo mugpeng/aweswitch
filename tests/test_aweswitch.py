@@ -104,8 +104,7 @@ class AweSwitchTests(unittest.TestCase):
 
         argv, env = aweswitch.prepare_run(config, "cc-glm", [], base_env)
 
-        self.assertEqual(env["PATH"], "/bin")
-        self.assertNotIn("ANTHROPIC_MODEL", env)
+        self.assertEqual(env["ANTHROPIC_MODEL"], "old-model")
         self.assertEqual(argv, [
             "claude",
             "--settings",

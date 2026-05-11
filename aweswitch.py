@@ -97,16 +97,15 @@ def prepare_run(config, profile_name, user_args, base_env=None, claude_settings_
         settings_env = load_claude_settings_env() if claude_settings_env is None else claude_settings_env
         expansion_env = {**settings_env, **base_env}
 
-    for key, value in profile_env.items():
-        env[key] = expand_value(value, expansion_env)
-
     if provider == "claude":
         argv = ["claude"]
-        settings_env = {key: env[key] for key in profile_env}
+        settings_env = {key: expand_value(value, expansion_env) for key, value in profile_env.items()}
         if settings_env:
             argv += ["--settings", json.dumps({"env": settings_env})]
         argv += user_args
     elif provider == "codex":
+        for key, value in profile_env.items():
+            env[key] = expand_value(value, expansion_env)
         model = profile.get("model")
         argv = ["codex"]
         if model:
