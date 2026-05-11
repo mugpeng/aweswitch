@@ -3,6 +3,7 @@ import copy
 import json
 import os
 import re
+import shlex
 import shutil
 import sys
 from pathlib import Path
@@ -40,7 +41,7 @@ def config_path():
     return Path(os.environ.get("AWESWITCH_CONFIG", "~/.config/aweswitch/config.json")).expanduser()
 
 
-def die(message, code=1):
+def die(message):
     raise SystemExit(f"aweswitch: {message}")
 
 
@@ -92,14 +93,15 @@ def prepare_run(config, profile_name, user_args, base_env=None):
     profile = profile_for(config, profile_name)
     provider = profile.get("provider")
     model = profile.get("model")
+    profile_env = profile.get("env", {})
     env = dict(base_env)
 
-    for key, value in profile.get("env", {}).items():
+    for key, value in profile_env.items():
         env[key] = expand_value(value, base_env)
 
     if provider == "claude":
-        if model:
-            env.setdefault("ANTHROPIC_MODEL", model)
+        if model and "ANTHROPIC_MODEL" not in profile_env:
+            env["ANTHROPIC_MODEL"] = model
         argv = ["claude", *user_args]
     elif provider == "codex":
         argv = ["codex"]
@@ -157,6 +159,19 @@ def command_show(config, name):
     print(json.dumps(redact(profile), indent=2))
 
 
+def editor_argv(editor, path):
+    return [*shlex.split(editor), str(path)]
+
+
+def exec_agent(argv, env):
+    try:
+        os.execvpe(argv[0], argv, env)
+    except FileNotFoundError:
+        die(f"command not found: {argv[0]}")
+    except OSError as exc:
+        die(f"failed to run {argv[0]}: {exc}")
+
+
 def command_config(argv):
     path = config_path()
     subcommand = argv[0] if argv else "path"
@@ -175,7 +190,8 @@ def command_config(argv):
         editor = os.environ.get("VISUAL") or os.environ.get("EDITOR") or shutil.which("nano")
         if not editor:
             die(f"no EDITOR set; edit config manually: {path}")
-        os.execvp(editor, [editor, str(path)])
+        argv = editor_argv(editor, path)
+        os.execvp(argv[0], argv)
     else:
         die(f"unknown config command: {subcommand}")
 
@@ -205,7 +221,7 @@ def main(argv=None):
         return 0
 
     run_argv, run_env = prepare_run(config, argv[0], argv[1:])
-    os.execvpe(run_argv[0], run_argv, run_env)
+    exec_agent(run_argv, run_env)
 
 
 if __name__ == "__main__":

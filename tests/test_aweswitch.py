@@ -43,6 +43,21 @@ class AweSwitchTests(unittest.TestCase):
         self.assertEqual(env["ANTHROPIC_AUTH_TOKEN"], "secret")
         self.assertEqual(base_env.get("ANTHROPIC_MODEL"), None)
 
+    def test_prepare_claude_model_overrides_existing_environment(self):
+        config = {
+            "profiles": {
+                "cc-glm": {
+                    "provider": "claude",
+                    "model": "glm-5.1",
+                }
+            }
+        }
+        base_env = {"ANTHROPIC_MODEL": "old-model"}
+
+        _, env = aweswitch.prepare_run(config, "cc-glm", [], base_env)
+
+        self.assertEqual(env["ANTHROPIC_MODEL"], "glm-5.1")
+
     def test_prepare_codex_uses_model_flag_without_config_args(self):
         config = {
             "profiles": {
@@ -80,6 +95,15 @@ class AweSwitchTests(unittest.TestCase):
     def test_expand_env_errors_on_missing_variable(self):
         with self.assertRaisesRegex(SystemExit, "missing environment variable"):
             aweswitch.expand_value("${MISSING_ENV}", {})
+
+    def test_editor_argv_splits_editor_with_flags(self):
+        argv = aweswitch.editor_argv("code -w", Path("/tmp/config.json"))
+
+        self.assertEqual(argv, ["code", "-w", "/tmp/config.json"])
+
+    def test_exec_agent_reports_missing_command(self):
+        with self.assertRaisesRegex(SystemExit, "command not found"):
+            aweswitch.exec_agent(["/tmp/aweswitch-command-that-does-not-exist"], {})
 
 
 if __name__ == "__main__":
