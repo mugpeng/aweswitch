@@ -10,6 +10,7 @@ Copy the script into a directory on your `PATH`:
 
 ```bash
 cp aweswitch.py ~/.local/bin/aweswitch
+cp default-config.json ~/.local/bin/default-config.json
 chmod +x ~/.local/bin/aweswitch
 ```
 
@@ -90,7 +91,7 @@ Example:
       "provider": "claude",
       "model": "glm-5.1",
       "env": {
-        "ANTHROPIC_BASE_URL": "${ANTHROPIC_BASE_URL}",
+        "ANTHROPIC_BASE_URL": "https://glm-provider.example.com/api/anthropic",
         "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}",
         "ANTHROPIC_MODEL": "glm-5.1",
         "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5.1",
@@ -117,15 +118,17 @@ Example:
 - `model` for Codex is passed as `--model <model>`.
 - `env` values only apply to the launched process.
 - `${VAR_NAME}` values are expanded from your current shell environment.
-- Claude profiles can also expand `${ANTHROPIC_*}` values from `~/.claude/settings.json` when they are not set in the shell.
+- Claude profiles can also expand token variables such as `${ANTHROPIC_AUTH_TOKEN}` from `~/.claude/settings.json` when they are not set in the shell.
 
 ## Environment Variables
 
-For custom providers, define the variables referenced by your profile:
+Before running a profile, configure the token environment variables referenced by that profile:
 
 ```bash
-export ANTHROPIC_BASE_URL="..."
 export ANTHROPIC_AUTH_TOKEN="..."
+export GEMINI_ANTHROPIC_AUTH_TOKEN="..."
+export XIAOMI_ANTHROPIC_AUTH_TOKEN="..."
+export OPENAI_API_KEY="..."
 ```
 
 Put long-lived variables in `~/.zshrc` if you want them available in every shell.
