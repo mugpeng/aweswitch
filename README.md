@@ -89,14 +89,10 @@ Example:
   "profiles": {
     "cc-glm": {
       "provider": "claude",
-      "model": "glm-5.1",
       "env": {
         "ANTHROPIC_BASE_URL": "https://glm-provider.example.com/api/anthropic",
         "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}",
-        "ANTHROPIC_MODEL": "glm-5.1",
-        "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5.1",
-        "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5.1",
-        "ANTHROPIC_REASONING_MODEL": "glm-5.1"
+        "ANTHROPIC_MODEL": "glm-5.1"
       }
     },
     "codex-mini": {
@@ -114,7 +110,7 @@ Example:
 
 - `provider: "claude"` runs `claude`.
 - `provider: "codex"` runs `codex`.
-- `model` for Claude sets `ANTHROPIC_MODEL` at runtime, unless `env.ANTHROPIC_MODEL` is explicitly set in the profile.
+- Claude profiles pass `env` through runtime `--settings '{"env": ...}'`, matching Claude Code's native settings mechanism. Set the Claude model with `env.ANTHROPIC_MODEL`.
 - `model` for Codex is passed as `--model <model>`.
 - `env` values only apply to the launched process.
 - `${VAR_NAME}` values are expanded from your current shell environment.

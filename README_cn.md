@@ -89,14 +89,10 @@ aweswitch config edit
   "profiles": {
     "cc-glm": {
       "provider": "claude",
-      "model": "glm-5.1",
       "env": {
         "ANTHROPIC_BASE_URL": "https://glm-provider.example.com/api/anthropic",
         "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}",
-        "ANTHROPIC_MODEL": "glm-5.1",
-        "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5.1",
-        "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5.1",
-        "ANTHROPIC_REASONING_MODEL": "glm-5.1"
+        "ANTHROPIC_MODEL": "glm-5.1"
       }
     },
     "codex-mini": {
@@ -114,7 +110,7 @@ aweswitch config edit
 
 - `provider: "claude"` 启动 `claude`。
 - `provider: "codex"` 启动 `codex`。
-- Claude 的 `model` 会在运行时设置为 `ANTHROPIC_MODEL`，除非 profile 里显式写了 `env.ANTHROPIC_MODEL`。
+- Claude profile 会通过运行时 `--settings '{"env": ...}'` 传入 `env`，和 Claude Code 原生 settings 机制一致；Claude 模型通过 `env.ANTHROPIC_MODEL` 配置。
 - Codex 的 `model` 会作为 `--model <model>` 参数传入。
 - `env` 只作用于本次启动的子进程。
 - `${VAR_NAME}` 会从当前 shell 环境变量中展开。

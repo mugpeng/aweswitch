@@ -90,7 +90,6 @@ def prepare_run(config, profile_name, user_args, base_env=None, claude_settings_
     base_env = dict(os.environ if base_env is None else base_env)
     profile = profile_for(config, profile_name)
     provider = profile.get("provider")
-    model = profile.get("model")
     profile_env = profile.get("env", {})
     env = dict(base_env)
     expansion_env = dict(base_env)
@@ -102,10 +101,13 @@ def prepare_run(config, profile_name, user_args, base_env=None, claude_settings_
         env[key] = expand_value(value, expansion_env)
 
     if provider == "claude":
-        if model and "ANTHROPIC_MODEL" not in profile_env:
-            env["ANTHROPIC_MODEL"] = model
-        argv = ["claude", *user_args]
+        argv = ["claude"]
+        settings_env = {key: env[key] for key in profile_env}
+        if settings_env:
+            argv += ["--settings", json.dumps({"env": settings_env})]
+        argv += user_args
     elif provider == "codex":
+        model = profile.get("model")
         argv = ["codex"]
         if model:
             argv += ["--model", model]
@@ -152,8 +154,14 @@ def command_list(config):
     for name in sorted(config["profiles"]):
         profile = config["profiles"][name]
         provider = profile.get("provider", "?")
-        model = profile.get("model", "?")
+        model = profile_model_label(profile)
         print(f"{name}\t{provider}\t{model}")
+
+
+def profile_model_label(profile):
+    if profile.get("provider") == "claude":
+        return profile.get("env", {}).get("ANTHROPIC_MODEL", "?")
+    return profile.get("model", "?")
 
 
 def command_show(config, name):
