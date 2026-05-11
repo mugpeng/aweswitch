@@ -1,0 +1,212 @@
+#!/usr/bin/env python3
+import copy
+import json
+import os
+import re
+import shutil
+import sys
+from pathlib import Path
+
+
+DEFAULT_CONFIG = {
+    "profiles": {
+        "cc-glm": {
+            "provider": "claude",
+            "model": "glm-5.1",
+            "env": {
+                "ANTHROPIC_BASE_URL": "${GLM_ANTHROPIC_BASE_URL}",
+                "ANTHROPIC_AUTH_TOKEN": "${GLM_ANTHROPIC_AUTH_TOKEN}",
+                "ANTHROPIC_MODEL": "glm-5.1",
+                "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5.1",
+                "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5.1",
+                "ANTHROPIC_REASONING_MODEL": "glm-5.1",
+            },
+        },
+        "codex-mini": {
+            "provider": "codex",
+            "model": "gpt-5.4-mini",
+            "env": {
+                "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+            },
+        },
+    }
+}
+
+SECRET_RE = re.compile(r"(TOKEN|KEY|SECRET|PASSWORD|AUTH)", re.IGNORECASE)
+ENV_REF_RE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
+
+
+def config_path():
+    return Path(os.environ.get("AWESWITCH_CONFIG", "~/.config/aweswitch/config.json")).expanduser()
+
+
+def die(message, code=1):
+    raise SystemExit(f"aweswitch: {message}")
+
+
+def init_config(path):
+    path = Path(path).expanduser()
+    if path.exists():
+        die(f"config already exists: {path}")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(DEFAULT_CONFIG, indent=2) + "\n")
+
+
+def load_config(path):
+    path = Path(path).expanduser()
+    if not path.exists():
+        die(f"config not found: {path}\nrun: aweswitch config init")
+    try:
+        data = json.loads(path.read_text())
+    except json.JSONDecodeError as exc:
+        die(f"invalid config JSON at {path}: {exc}")
+    if not isinstance(data.get("profiles"), dict):
+        die("config must contain a profiles object")
+    return data
+
+
+def expand_value(value, env):
+    if not isinstance(value, str):
+        return value
+
+    def replace(match):
+        name = match.group(1)
+        if name not in env:
+            die(f"missing environment variable: {name}")
+        return env[name]
+
+    return ENV_REF_RE.sub(replace, value)
+
+
+def profile_for(config, name):
+    profile = config.get("profiles", {}).get(name)
+    if profile is None:
+        die(f"unknown profile: {name}")
+    if not isinstance(profile, dict):
+        die(f"profile must be an object: {name}")
+    return profile
+
+
+def prepare_run(config, profile_name, user_args, base_env=None):
+    base_env = dict(os.environ if base_env is None else base_env)
+    profile = profile_for(config, profile_name)
+    provider = profile.get("provider")
+    model = profile.get("model")
+    env = dict(base_env)
+
+    for key, value in profile.get("env", {}).items():
+        env[key] = expand_value(value, base_env)
+
+    if provider == "claude":
+        if model:
+            env.setdefault("ANTHROPIC_MODEL", model)
+        argv = ["claude", *user_args]
+    elif provider == "codex":
+        argv = ["codex"]
+        if model:
+            argv += ["--model", model]
+        argv += user_args
+    else:
+        die(f"unsupported provider for {profile_name}: {provider}")
+
+    return argv, env
+
+
+def redact(data):
+    redacted = copy.deepcopy(data)
+
+    def walk(value, key=""):
+        if isinstance(value, dict):
+            for child_key, child_value in value.items():
+                if SECRET_RE.search(child_key) and isinstance(child_value, str):
+                    value[child_key] = "<redacted>"
+                else:
+                    walk(child_value, child_key)
+        elif isinstance(value, list):
+            for item in value:
+                walk(item, key)
+
+    walk(redacted)
+    return redacted
+
+
+def print_usage():
+    print(
+        """usage:
+  aweswitch <profile> [agent args...]
+  aweswitch list
+  aweswitch show <profile>
+  aweswitch config path
+  aweswitch config show
+  aweswitch config edit
+  aweswitch config init
+  aweswitch init"""
+    )
+
+
+def command_list(config):
+    for name in sorted(config["profiles"]):
+        profile = config["profiles"][name]
+        provider = profile.get("provider", "?")
+        model = profile.get("model", "?")
+        print(f"{name}\t{provider}\t{model}")
+
+
+def command_show(config, name):
+    profile = profile_for(config, name)
+    print(json.dumps(redact(profile), indent=2))
+
+
+def command_config(argv):
+    path = config_path()
+    subcommand = argv[0] if argv else "path"
+
+    if subcommand == "path":
+        print(path)
+    elif subcommand == "show":
+        print(json.dumps(redact(load_config(path)), indent=2))
+    elif subcommand == "init":
+        init_config(path)
+        print(path)
+    elif subcommand == "edit":
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if not path.exists():
+            init_config(path)
+        editor = os.environ.get("VISUAL") or os.environ.get("EDITOR") or shutil.which("nano")
+        if not editor:
+            die(f"no EDITOR set; edit config manually: {path}")
+        os.execvp(editor, [editor, str(path)])
+    else:
+        die(f"unknown config command: {subcommand}")
+
+
+def main(argv=None):
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if not argv or argv[0] in ("-h", "--help", "help"):
+        print_usage()
+        return 0
+
+    if argv[0] == "config":
+        command_config(argv[1:])
+        return 0
+    if argv[0] == "init":
+        init_config(config_path())
+        print(config_path())
+        return 0
+
+    config = load_config(config_path())
+    if argv[0] == "list":
+        command_list(config)
+        return 0
+    if argv[0] == "show":
+        if len(argv) != 2:
+            die("usage: aweswitch show <profile>")
+        command_show(config, argv[1])
+        return 0
+
+    run_argv, run_env = prepare_run(config, argv[0], argv[1:])
+    os.execvpe(run_argv[0], run_argv, run_env)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
