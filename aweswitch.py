@@ -9,56 +9,7 @@ import sys
 from pathlib import Path
 
 
-DEFAULT_CONFIG = {
-    "profiles": {
-        "cc-glm": {
-            "provider": "claude",
-            "model": "glm-5.1",
-            "env": {
-                "ANTHROPIC_BASE_URL": "https://open.bigmodel.cn/api/anthropic",
-                "ANTHROPIC_AUTH_TOKEN": "${GLM_ANTHROPIC_AUTH_TOKEN}",
-                "ANTHROPIC_MODEL": "glm-5.1",
-                "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5.1",
-                "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5.1",
-                "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-5.0",
-                "ANTHROPIC_REASONING_MODEL": "glm-5.1",
-            },
-        },
-        "cc-gemini": {
-            "provider": "claude",
-            "model": "gemini-3.1-pro-preview",
-            "env": {
-                "ANTHROPIC_BASE_URL": "https://openclaw.chatgo.best",
-                "ANTHROPIC_AUTH_TOKEN": "${GEMINI_ANTHROPIC_AUTH_TOKEN}",
-                "ANTHROPIC_MODEL": "gemini-3.1-pro-preview",
-                "ANTHROPIC_DEFAULT_SONNET_MODEL": "gemini-3.1-pro-preview",
-                "ANTHROPIC_DEFAULT_OPUS_MODEL": "gemini-3.1-pro-preview",
-                "ANTHROPIC_DEFAULT_HAIKU_MODEL": "gemini-3.1-flash-lite-preview",
-                "ANTHROPIC_REASONING_MODEL": "gemini-3.1-pro-preview",
-            },
-        },
-        "cc-xiaomi": {
-            "provider": "claude",
-            "model": "mimo-v2.5-pro",
-            "env": {
-                "ANTHROPIC_BASE_URL": "https://token-plan-sgp.xiaomimimo.com/anthropic",
-                "ANTHROPIC_AUTH_TOKEN": "${XIAOMI_ANTHROPIC_AUTH_TOKEN}",
-                "ANTHROPIC_MODEL": "mimo-v2.5-pro",
-                "ANTHROPIC_DEFAULT_SONNET_MODEL": "mimo-v2.5-pro",
-                "ANTHROPIC_DEFAULT_OPUS_MODEL": "mimo-v2.5-pro",
-                "ANTHROPIC_DEFAULT_HAIKU_MODEL": "mimo-v2.5-pro",
-                "ANTHROPIC_REASONING_MODEL": "mimo-v2.5-pro",
-            },
-        },
-        "codex-mini": {
-            "provider": "codex",
-            "model": "gpt-5.4-mini",
-            "env": {
-                "OPENAI_API_KEY": "${OPENAI_API_KEY}",
-            },
-        },
-    }
-}
+TEMPLATE_PATH = Path(__file__).parent / "default-config.json"
 
 SECRET_RE = re.compile(r"(TOKEN|KEY|SECRET|PASSWORD|AUTH)", re.IGNORECASE)
 ENV_REF_RE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
@@ -76,8 +27,10 @@ def init_config(path):
     path = Path(path).expanduser()
     if path.exists():
         die(f"config already exists: {path}")
+    if not TEMPLATE_PATH.exists():
+        die(f"template not found: {TEMPLATE_PATH}")
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(DEFAULT_CONFIG, indent=2) + "\n")
+    shutil.copy2(TEMPLATE_PATH, path)
 
 
 def load_config(path):
