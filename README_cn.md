@@ -1,7 +1,7 @@
 <div align="center">
   <h1>aweswitch: Agent Profile Switcher</h1>
   <p><strong>一个很小的本地启动器，用来切换 AI agent 运行时 profile。</strong></p>
-  <p>把 provider URL、token 和模型名放进一个配置文件，然后用指定 profile 启动 agent。</p>
+  <p>用不同 API、token 和模型启动不同 agent 会话，同时不改写全局 agent 配置。</p>
   <p>
     <a href="./README.md">English</a> ·
     <strong>简体中文</strong>
@@ -19,9 +19,9 @@
   </p>
 </div>
 
-> 在不改写 agent 原始 settings 文件的前提下切换运行时 profile。
+> 让不同 agent profile 并行运行，同时不影响已经打开的会话。
 
-`aweswitch` 从 `~/.config/aweswitch/config.json` 读取 profile，展开环境变量引用，准备 provider 对应的运行时参数，然后启动所选 agent。
+`aweswitch` 从 `~/.config/aweswitch/config.json` 读取 profile，展开环境变量引用，准备 provider 对应的运行时参数，然后启动所选 agent。每次启动都会拿到自己的 API endpoint、token 和模型；这些配置通过运行时参数注入，而不是改写全局 agent settings。
 
 它刻意保持小而直接。项目定位是 agent profile switcher，但目前只支持 Claude Code profile。配置格式为以后加入 Codex 或 Hermes 预留了 provider 分组，但这些 provider 现在还不能执行。
 
@@ -30,7 +30,7 @@
 从 PyPI 安装：
 
 ```bash
-python3 -m pip install aweswitch
+pip3 install aweswitch
 aweswitch --help
 ```
 
@@ -123,8 +123,9 @@ aweswitch config edit
 
 - **一个本地配置文件**：`~/.config/aweswitch/config.json`
 - **命名 agent profile**：例如 `cc-glm`、`cc-gemini`、`cc-xiaomi`
+- **并行会话**：不同终端可以启动不同 API/model 组合
 - **只在运行时注入配置**：通过 provider 对应的运行参数
-- **不修改 agent 原始 settings 文件**
+- **不修改全局 agent 配置**：已经打开的 agent 会话继续使用启动时的配置
 - **token 引用**：来自 shell 环境变量或 `~/.claude/settings.json`
 - **可读 JSON**：profile 按 `profiles.claude` 分组
 
@@ -140,7 +141,7 @@ aweswitch config edit
 
 ### aweswitch 会修改 Claude settings 吗？
 
-不会。它只读取 aweswitch 自己的配置，并为当前启动的 Claude Code 进程传入运行时 settings。
+不会。它只读取 aweswitch 自己的配置，并为当前启动的 Claude Code 进程传入运行时 settings。切换 profile 不会改写全局 API endpoint 或模型，因此不会影响已经运行中的 agent 会话。
 
 ### aweswitch 支持 Codex 或 Hermes 吗？
 
@@ -151,6 +152,8 @@ aweswitch config edit
 ### [cc-switch](https://github.com/farion1231/cc-switch)
 
 `cc-switch` 是相邻方向的 Claude Code 切换工具。它是同一问题空间里的有用参考：让 Claude Code 的 provider/model 切换更容易通过命令行完成。
+
+关键区别是 `aweswitch` 不改写全局配置。很多切换工具通过修改 agent 共享的 API/model settings 来完成切换；这样一来，之前已经打开的 agent 会话可能会因为底层全局 API 变化而不可用。`aweswitch` 把 profile 放在自己的 JSON 文件里，只在启动新进程时注入运行时 settings，所以每个会话都保留它启动时的 API 和模型。
 
 `aweswitch` 目前采用更小的 Python package 路线：本地 JSON profile 文件、只通过 Claude Code 运行时 `--settings` 注入、检查命令隐藏敏感字段，并保留 provider 分组以便未来支持更多 agent。
 
@@ -210,20 +213,20 @@ python3 -m py_compile aweswitch.py src/aweswitch/cli.py tests/test_aweswitch.py
 安装当前仓库的 editable 版本：
 
 ```bash
-python3 -m pip install -e .
+pip3 install -e .
 ```
 
 构建本地安装包：
 
 ```bash
-python3 -m pip install build
+pip3 install build
 python3 -m build
 ```
 
 本地安装构建出的 wheel：
 
 ```bash
-python3 -m pip install dist/aweswitch-0.1.0-py3-none-any.whl
+pip3 install dist/aweswitch-0.1.0-py3-none-any.whl
 ```
 
 项目文档：

@@ -1,7 +1,7 @@
 <div align="center">
   <h1>aweswitch: Agent Profile Switcher</h1>
   <p><strong>A tiny local launcher for switching AI agent runtime profiles.</strong></p>
-  <p>Keep provider URLs, tokens, and model names in one config file, then start an agent with the profile you choose.</p>
+  <p>Start different agent sessions with different API endpoints, tokens, and models without rewriting global agent config.</p>
   <p>
     <strong>English</strong> ·
     <a href="./README_cn.md">简体中文</a>
@@ -19,9 +19,9 @@
   </p>
 </div>
 
-> Switch agent runtime profiles without rewriting the agent's own settings file.
+> Run different agent profiles side by side without breaking sessions that are already open.
 
-`aweswitch` reads profiles from `~/.config/aweswitch/config.json`, expands environment references, prepares provider-specific runtime arguments, and then starts the selected agent.
+`aweswitch` reads profiles from `~/.config/aweswitch/config.json`, expands environment references, prepares provider-specific runtime arguments, and then starts the selected agent. Each launch gets its own API endpoint, token, and model through runtime arguments instead of mutating global agent settings.
 
 It is intentionally small. The project is positioned as an agent profile switcher, but today it supports Claude Code profiles only. Codex and Hermes profile groups may appear in the config shape later, but they are not executable yet.
 
@@ -30,7 +30,7 @@ It is intentionally small. The project is positioned as an agent profile switche
 Install from PyPI:
 
 ```bash
-python3 -m pip install aweswitch
+pip3 install aweswitch
 aweswitch --help
 ```
 
@@ -123,8 +123,9 @@ aweswitch config edit
 
 - **One local config file** at `~/.config/aweswitch/config.json`
 - **Named agent profiles** such as `cc-glm`, `cc-gemini`, or `cc-xiaomi`
+- **Side-by-side sessions** where different terminals can launch different API/model combinations
 - **Runtime-only injection** through provider-specific arguments
-- **No mutation of the agent's original settings file**
+- **No mutation of global agent config**, so already-open agent sessions keep working with the settings they started with
 - **Token references** through shell variables or `~/.claude/settings.json`
 - **Readable JSON** with provider grouping under `profiles.claude`
 
@@ -140,7 +141,7 @@ You can override that path with `AWESWITCH_CONFIG`.
 
 ### Does aweswitch modify Claude settings?
 
-No. It reads your aweswitch config and launches Claude Code with runtime settings for that process only.
+No. It reads your aweswitch config and launches Claude Code with runtime settings for that process only. Switching profiles does not rewrite the global API endpoint or model, so it does not disturb agent sessions that are already running.
 
 ### Does aweswitch support Codex or Hermes?
 
@@ -152,7 +153,9 @@ Not yet. The config format groups profiles by provider so future support can fit
 
 `cc-switch` is an adjacent Claude Code switching tool. It is useful reference material for the same problem space: making Claude Code provider/model switching easier from the command line.
 
-`aweswitch` currently takes a smaller Python-package approach: a local JSON profile file, runtime-only Claude Code `--settings`, secret redaction for inspection commands, and provider grouping that leaves room for future agent support.
+The key difference is that `aweswitch` avoids global config mutation. Many switching tools work by changing the agent's shared API/model settings; that can make already-open agent sessions unreliable because the global API endpoint changed underneath them. `aweswitch` keeps profiles in its own JSON file and injects settings only when launching a new process, so each session keeps the API and model it started with.
+
+`aweswitch` currently takes a smaller Python-package approach: local JSON profiles, runtime-only Claude Code `--settings`, secret redaction for inspection commands, and provider grouping that leaves room for future agent support.
 
 ## Profile Rules
 
@@ -210,20 +213,20 @@ python3 -m py_compile aweswitch.py src/aweswitch/cli.py tests/test_aweswitch.py
 Install the local checkout in editable mode:
 
 ```bash
-python3 -m pip install -e .
+pip3 install -e .
 ```
 
 Build a local package:
 
 ```bash
-python3 -m pip install build
+pip3 install build
 python3 -m build
 ```
 
 Install a built wheel locally:
 
 ```bash
-python3 -m pip install dist/aweswitch-0.1.0-py3-none-any.whl
+pip3 install dist/aweswitch-0.1.0-py3-none-any.whl
 ```
 
 Project docs:
