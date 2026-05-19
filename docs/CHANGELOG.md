@@ -34,9 +34,9 @@ The README now calls out [cc-switch](https://github.com/farion1231/cc-switch) as
 - Repositioned aweswitch as an agent profile switcher
 - Added a similar-tools note for `cc-switch`
 
-## dev
+## v0.1.1
 
-The `dev` branch now groups profiles under provider keys while keeping the command-line experience simple. Config files use `profiles.claude.<profileName>` instead of repeating `provider: "claude"` inside every profile. The executable provider set is intentionally limited to Claude Code for now, and Codex has been removed from the default configuration.
+`v0.1.1` merges the `dev` branch into `main`. Profiles are now grouped under provider keys, the default config is Claude-only, and both README files include a hero image.
 
 ### Provider-grouped profiles
 
@@ -64,7 +64,7 @@ The default config now contains only Claude Code profiles. Codex and Hermes are 
 
 ### Documentation refresh
 
-The README files were reworked around the same structure used by the larger aweskill project: concise positioning, install steps, FAQ, quick start, config rules, and development notes. Contributor guidance now lives in `docs/CONTRIBUTING.md`.
+The README files were reworked around the same structure used by the larger aweskill project: concise positioning, install steps, FAQ, quick start, config rules, and development notes. Contributor guidance now lives in `docs/CONTRIBUTING.md`. Both READMEs now show a hero image at the top.
 
 ### Highlights
 
@@ -75,6 +75,7 @@ The README files were reworked around the same structure used by the larger awes
 - Added duplicate profile-name detection
 - Added contributor documentation
 - Refreshed English and Chinese READMEs
+- Added hero image to README headers
 
 ## initial line
 

@@ -5,8 +5,11 @@ import os
 import re
 import shlex
 import shutil
-import sys
 from pathlib import Path
+
+import click
+
+from aweswitch import __version__
 
 
 TEMPLATE_PATH = Path(__file__).parent / "default-config.json"
@@ -137,20 +140,6 @@ def redact(data):
     return redacted
 
 
-def print_usage():
-    print(
-        """usage:
-  aweswitch <profile> [agent args...]
-  aweswitch list
-  aweswitch show <profile>
-  aweswitch config path
-  aweswitch config show
-  aweswitch config edit
-  aweswitch config init
-  aweswitch init"""
-    )
-
-
 def command_list(config):
     for provider in sorted(config["profiles"]):
         provider_profiles = config["profiles"][provider]
@@ -210,32 +199,134 @@ def command_config(argv):
         die(f"unknown config command: {subcommand}")
 
 
-def main(argv=None):
-    argv = list(sys.argv[1:] if argv is None else argv)
-    if not argv or argv[0] in ("-h", "--help", "help"):
-        print_usage()
-        return 0
+class ProfileGroup(click.Group):
+    def resolve_command(self, ctx, args):
+        try:
+            return super().resolve_command(ctx, args)
+        except click.UsageError:
+            if not args:
+                raise
+            profile_name = args[0]
+            ctx.meta["profile_name"] = profile_name
+            command = self.get_command(ctx, "__profile__")
+            return profile_name, command, args[1:]
 
-    if argv[0] == "config":
-        command_config(argv[1:])
-        return 0
-    if argv[0] == "init":
-        init_config(config_path())
-        print(config_path())
-        return 0
 
-    config = load_config(config_path())
-    if argv[0] == "list":
-        command_list(config)
-        return 0
-    if argv[0] == "show":
-        if len(argv) != 2:
-            die("usage: aweswitch show <profile>")
-        command_show(config, argv[1])
-        return 0
+@click.group(
+    cls=ProfileGroup,
+    name="aweswitch",
+    context_settings={"help_option_names": ["-h", "--help"]},
+    help="Agent profile switcher for launching isolated runtime configs.",
+)
+@click.version_option(__version__, "-v", "--version", message="%(version)s")
+def cli():
+    pass
 
-    run_argv, run_env = prepare_run(config, argv[0], argv[1:])
+
+@cli.command("list")
+def list_profiles():
+    """List configured profiles."""
+    command_list(load_config(config_path()))
+
+
+@cli.command()
+@click.argument("profile")
+def show(profile):
+    """Show one profile with secrets redacted."""
+    command_show(load_config(config_path()), profile)
+
+
+@cli.group(context_settings={"help_option_names": ["-h", "--help"]})
+def config():
+    """Manage aweswitch config."""
+
+
+@config.command("path")
+def config_path_command():
+    """Print config path."""
+    click.echo(config_path())
+
+
+@config.command("show")
+def config_show_command():
+    """Show config with secrets redacted."""
+    click.echo(json.dumps(redact(load_config(config_path())), indent=2))
+
+
+@config.command("edit")
+def config_edit_command():
+    """Open config in $VISUAL, $EDITOR, or nano."""
+    command_config(["edit"])
+
+
+@config.command("init")
+def config_init_command():
+    """Create the default config."""
+    init_config(config_path())
+    click.echo(config_path())
+
+
+@cli.command("init")
+def init_command():
+    """Create the default config."""
+    init_config(config_path())
+    click.echo(config_path())
+
+
+@cli.command("help")
+@click.argument("command_name", required=False)
+@click.pass_context
+def help_command(ctx, command_name):
+    """Display help for command."""
+    if command_name is None:
+        click.echo(ctx.parent.get_help())
+        return
+
+    command = cli.get_command(ctx, command_name)
+    if command is None or command.hidden:
+        raise click.ClickException(f"unknown command '{command_name}'")
+    with command.make_context(command_name, [], parent=ctx.parent, resilient_parsing=True) as command_ctx:
+        click.echo(command.get_help(command_ctx))
+
+
+@config.command("help")
+@click.argument("command_name", required=False)
+@click.pass_context
+def config_help_command(ctx, command_name):
+    """Display help for config command."""
+    if command_name is None:
+        click.echo(ctx.parent.get_help())
+        return
+
+    command = config.get_command(ctx, command_name)
+    if command is None or command.hidden:
+        raise click.ClickException(f"unknown config command '{command_name}'")
+    with command.make_context(
+        command_name,
+        [],
+        parent=ctx.parent,
+        resilient_parsing=True,
+    ) as command_ctx:
+        click.echo(command.get_help(command_ctx))
+
+
+@click.command(
+    "__profile__",
+    hidden=True,
+    context_settings={"ignore_unknown_options": True, "allow_extra_args": True},
+)
+@click.pass_context
+def run_profile(ctx):
+    profile_name = ctx.parent.meta["profile_name"]
+    run_argv, run_env = prepare_run(load_config(config_path()), profile_name, ctx.args)
     exec_agent(run_argv, run_env)
+
+
+cli.add_command(run_profile)
+
+
+def main(argv=None):
+    return cli.main(args=argv, prog_name="aweswitch")
 
 
 if __name__ == "__main__":

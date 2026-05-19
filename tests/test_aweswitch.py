@@ -4,6 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from click.testing import CliRunner
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from aweswitch import cli as aweswitch
@@ -27,8 +29,45 @@ class AweSwitchTests(unittest.TestCase):
 
         data = pyproject_path.read_text()
 
-        self.assertIn('version = "0.1.0"', data)
+        self.assertIn('version = "0.1.1"', data)
         self.assertIn('aweswitch = "aweswitch.cli:main"', data)
+        self.assertIn('dependencies = ["click>=8.1"]', data)
+
+    def test_main_help_uses_click_command_layout(self):
+        result = CliRunner().invoke(aweswitch.cli, ["-h"])
+
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("Usage: aweswitch [OPTIONS] COMMAND [ARGS]...", result.output)
+        self.assertIn("Agent profile switcher for launching isolated runtime configs.", result.output)
+        self.assertIn("-v, --version", result.output)
+        self.assertIn("list", result.output)
+        self.assertIn("config", result.output)
+        self.assertIn("help", result.output)
+
+    def test_version_option(self):
+        result = CliRunner().invoke(aweswitch.cli, ["-v"])
+
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("0.1.1", result.output)
+
+    def test_config_help_uses_click_command_layout(self):
+        result = CliRunner().invoke(aweswitch.cli, ["config", "-h"])
+
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("Usage: aweswitch config [OPTIONS] COMMAND [ARGS]...", result.output)
+        self.assertIn("Manage aweswitch config.", result.output)
+        self.assertIn("path", result.output)
+        self.assertIn("show", result.output)
+        self.assertIn("edit", result.output)
+        self.assertIn("init", result.output)
+        self.assertIn("help", result.output)
+
+    def test_help_command_can_show_config_help(self):
+        result = CliRunner().invoke(aweswitch.cli, ["help", "config"])
+
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("Usage: aweswitch config [OPTIONS] COMMAND [ARGS]...", result.output)
+        self.assertIn("Manage aweswitch config.", result.output)
 
     def test_prepare_claude_uses_provider_command_and_env_overrides(self):
         config = {

@@ -13,7 +13,7 @@ git clone https://github.com/mugpeng/aweswitch.git
 cd aweswitch
 python3 -m pip install -e .
 python3 tests/test_aweswitch.py
-python3 -m py_compile aweswitch.py src/aweswitch/cli.py tests/test_aweswitch.py
+python3 -m py_compile src/aweswitch/cli.py tests/test_aweswitch.py
 ```
 
 For local CLI testing:
@@ -93,7 +93,7 @@ Before committing, run:
 
 ```bash
 python3 tests/test_aweswitch.py
-python3 -m py_compile aweswitch.py src/aweswitch/cli.py tests/test_aweswitch.py
+python3 -m py_compile src/aweswitch/cli.py tests/test_aweswitch.py
 ```
 
 If a change affects command output or config parsing, add or update tests in `tests/test_aweswitch.py`.

@@ -8,7 +8,7 @@
     <strong>简体中文</strong>
   </p>
   <p>
-    <img src="https://img.shields.io/badge/version-0.1.0-7C3AED?style=flat-square" alt="Version">
+    <img src="https://img.shields.io/badge/version-0.1.1-7C3AED?style=flat-square" alt="Version">
     <img src="https://img.shields.io/badge/python-%E2%89%A53.9-0EA5E9?style=flat-square" alt="Python">
     <img src="https://img.shields.io/badge/license-MPL--2.0-22C55E?style=flat-square" alt="License">
   </p>
@@ -208,7 +208,7 @@ python3 tests/test_aweswitch.py
 运行语法检查：
 
 ```bash
-python3 -m py_compile aweswitch.py src/aweswitch/cli.py tests/test_aweswitch.py
+python3 -m py_compile src/aweswitch/cli.py tests/test_aweswitch.py
 ```
 
 安装当前仓库的 editable 版本：
@@ -227,7 +227,7 @@ python3 -m build
 本地安装构建出的 wheel：
 
 ```bash
-pip3 install dist/aweswitch-0.1.0-py3-none-any.whl
+pip3 install dist/aweswitch-0.1.1-py3-none-any.whl
 ```
 
 项目文档：
