@@ -18,18 +18,21 @@ class AweSwitchTests(unittest.TestCase):
 
             data = json.loads(path.read_text())
             self.assertIn("profiles", data)
-            self.assertIn("cc-glm", data["profiles"])
+            self.assertIn("claude", data["profiles"])
+            self.assertIn("cc-glm", data["profiles"]["claude"])
+            self.assertNotIn("codex", data["profiles"])
 
     def test_prepare_claude_uses_provider_command_and_env_overrides(self):
         config = {
             "profiles": {
-                "cc-glm": {
-                    "provider": "claude",
-                    "env": {
-                        "ANTHROPIC_BASE_URL": "${GLM_BASE}",
-                        "ANTHROPIC_AUTH_TOKEN": "${GLM_TOKEN}",
-                        "ANTHROPIC_MODEL": "glm-5.1",
-                    },
+                "claude": {
+                    "cc-glm": {
+                        "env": {
+                            "ANTHROPIC_BASE_URL": "${GLM_BASE}",
+                            "ANTHROPIC_AUTH_TOKEN": "${GLM_TOKEN}",
+                            "ANTHROPIC_MODEL": "glm-5.1",
+                        },
+                    }
                 }
             }
         }
@@ -57,13 +60,14 @@ class AweSwitchTests(unittest.TestCase):
     def test_prepare_claude_can_expand_from_claude_settings_env(self):
         config = {
             "profiles": {
-                "cc-glm": {
-                    "provider": "claude",
-                    "env": {
-                        "ANTHROPIC_BASE_URL": "${ANTHROPIC_BASE_URL}",
-                        "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}",
-                        "ANTHROPIC_MODEL": "glm-5.1",
-                    },
+                "claude": {
+                    "cc-glm": {
+                        "env": {
+                            "ANTHROPIC_BASE_URL": "${ANTHROPIC_BASE_URL}",
+                            "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}",
+                            "ANTHROPIC_MODEL": "glm-5.1",
+                        },
+                    }
                 }
             }
         }
@@ -90,13 +94,14 @@ class AweSwitchTests(unittest.TestCase):
     def test_prepare_claude_only_uses_settings_env_for_model(self):
         config = {
             "profiles": {
-                "cc-glm": {
-                    "provider": "claude",
-                    "env": {
-                        "ANTHROPIC_BASE_URL": "https://example.test",
-                        "ANTHROPIC_AUTH_TOKEN": "secret",
-                        "ANTHROPIC_MODEL": "glm-5.1",
-                    },
+                "claude": {
+                    "cc-glm": {
+                        "env": {
+                            "ANTHROPIC_BASE_URL": "https://example.test",
+                            "ANTHROPIC_AUTH_TOKEN": "secret",
+                            "ANTHROPIC_MODEL": "glm-5.1",
+                        },
+                    }
                 }
             }
         }
@@ -120,14 +125,15 @@ class AweSwitchTests(unittest.TestCase):
     def test_prepare_claude_ignores_top_level_model(self):
         config = {
             "profiles": {
-                "cc-glm": {
-                    "provider": "claude",
-                    "model": "ignored-model",
-                    "env": {
-                        "ANTHROPIC_BASE_URL": "https://example.test",
-                        "ANTHROPIC_AUTH_TOKEN": "secret",
-                        "ANTHROPIC_MODEL": "glm-5.1",
-                    },
+                "claude": {
+                    "cc-glm": {
+                        "model": "ignored-model",
+                        "env": {
+                            "ANTHROPIC_BASE_URL": "https://example.test",
+                            "ANTHROPIC_AUTH_TOKEN": "secret",
+                            "ANTHROPIC_MODEL": "glm-5.1",
+                        },
+                    }
                 }
             }
         }
@@ -138,31 +144,37 @@ class AweSwitchTests(unittest.TestCase):
         self.assertNotIn("--model", argv)
         self.assertNotIn("ignored-model", argv)
 
-    def test_prepare_codex_uses_model_flag_without_config_args(self):
+    def test_prepare_rejects_codex_profiles_for_now(self):
         config = {
             "profiles": {
-                "codex-mini": {
-                    "provider": "codex",
-                    "model": "gpt-5.4-mini",
-                    "env": {"OPENAI_API_KEY": "${OPENAI_API_KEY}"},
+                "codex": {
+                    "codex-mini": {
+                        "model": "gpt-5.4-mini",
+                        "env": {"OPENAI_API_KEY": "${OPENAI_API_KEY}"},
+                    }
                 }
             }
         }
-        base_env = {"OPENAI_API_KEY": "secret"}
 
-        argv, env = aweswitch.prepare_run(config, "codex-mini", ["--help"], base_env)
-
-        self.assertEqual(argv, ["codex", "--model", "gpt-5.4-mini", "--help"])
-        self.assertEqual(env["OPENAI_API_KEY"], "secret")
+        with self.assertRaisesRegex(SystemExit, "unsupported provider"):
+            aweswitch.prepare_run(config, "codex-mini", ["--help"], {})
 
     def test_profile_model_label_uses_anthropic_model_for_claude(self):
         self.assertEqual(
-            aweswitch.profile_model_label({
-                "provider": "claude",
-                "env": {"ANTHROPIC_MODEL": "glm-5.1"},
-            }),
+            aweswitch.profile_model_label("claude", {"env": {"ANTHROPIC_MODEL": "glm-5.1"}}),
             "glm-5.1",
         )
+
+    def test_profile_for_errors_on_duplicate_profile_names(self):
+        config = {
+            "profiles": {
+                "claude": {"default": {"env": {}}},
+                "codex": {"default": {"env": {}}},
+            }
+        }
+
+        with self.assertRaisesRegex(SystemExit, "ambiguous profile"):
+            aweswitch.profile_for(config, "default")
 
     def test_redact_hides_secret_values(self):
         data = {

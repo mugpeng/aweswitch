@@ -78,18 +78,28 @@ def expand_value(value, env):
 
 
 def profile_for(config, name):
-    profile = config.get("profiles", {}).get(name)
-    if profile is None:
+    matches = []
+    for provider, provider_profiles in config.get("profiles", {}).items():
+        if not isinstance(provider_profiles, dict):
+            die(f"provider profiles must be an object: {provider}")
+        profile = provider_profiles.get(name)
+        if profile is not None:
+            matches.append((provider, profile))
+
+    if not matches:
         die(f"unknown profile: {name}")
+    if len(matches) > 1:
+        die(f"ambiguous profile: {name}")
+
+    provider, profile = matches[0]
     if not isinstance(profile, dict):
-        die(f"profile must be an object: {name}")
-    return profile
+        die(f"profile must be an object: {provider}.{name}")
+    return provider, profile
 
 
 def prepare_run(config, profile_name, user_args, base_env=None, claude_settings_env=None):
     base_env = dict(os.environ if base_env is None else base_env)
-    profile = profile_for(config, profile_name)
-    provider = profile.get("provider")
+    provider, profile = profile_for(config, profile_name)
     profile_env = profile.get("env", {})
     env = dict(base_env)
     expansion_env = dict(base_env)
@@ -102,14 +112,6 @@ def prepare_run(config, profile_name, user_args, base_env=None, claude_settings_
         settings_env = {key: expand_value(value, expansion_env) for key, value in profile_env.items()}
         if settings_env:
             argv += ["--settings", json.dumps({"env": settings_env})]
-        argv += user_args
-    elif provider == "codex":
-        for key, value in profile_env.items():
-            env[key] = expand_value(value, expansion_env)
-        model = profile.get("model")
-        argv = ["codex"]
-        if model:
-            argv += ["--model", model]
         argv += user_args
     else:
         die(f"unsupported provider for {profile_name}: {provider}")
@@ -150,21 +152,24 @@ def print_usage():
 
 
 def command_list(config):
-    for name in sorted(config["profiles"]):
-        profile = config["profiles"][name]
-        provider = profile.get("provider", "?")
-        model = profile_model_label(profile)
-        print(f"{name}\t{provider}\t{model}")
+    for provider in sorted(config["profiles"]):
+        provider_profiles = config["profiles"][provider]
+        if not isinstance(provider_profiles, dict):
+            die(f"provider profiles must be an object: {provider}")
+        for name in sorted(provider_profiles):
+            profile = provider_profiles[name]
+            model = profile_model_label(provider, profile)
+            print(f"{name}\t{provider}\t{model}")
 
 
-def profile_model_label(profile):
-    if profile.get("provider") == "claude":
+def profile_model_label(provider, profile):
+    if provider == "claude":
         return profile.get("env", {}).get("ANTHROPIC_MODEL", "?")
-    return profile.get("model", "?")
+    return "?"
 
 
 def command_show(config, name):
-    profile = profile_for(config, name)
+    _, profile = profile_for(config, name)
     print(json.dumps(redact(profile), indent=2))
 
 

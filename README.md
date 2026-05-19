@@ -1,8 +1,8 @@
 # aweswitch
 
-`aweswitch` is a small launcher for switching Claude Code and Codex runtime profiles.
+`aweswitch` is a small launcher for switching Claude Code runtime profiles.
 
-It reads profiles from `~/.config/aweswitch/config.json`, applies profile-specific environment variables or runtime flags, and then starts the selected agent. It does not modify the original Claude or Codex config files.
+It reads profiles from `~/.config/aweswitch/config.json`, applies profile-specific environment variables, and then starts Claude Code. It does not modify the original Claude config file.
 
 ## Install
 
@@ -56,14 +56,12 @@ Run a profile:
 
 ```bash
 aweswitch cc-glm
-aweswitch codex-mini
 ```
 
 Extra arguments are passed through to the underlying agent:
 
 ```bash
 aweswitch cc-glm --dangerously-skip-permissions
-aweswitch codex-mini --cd /path/to/project
 ```
 
 ## Config
@@ -87,19 +85,13 @@ Example:
 ```json
 {
   "profiles": {
-    "cc-glm": {
-      "provider": "claude",
-      "env": {
-        "ANTHROPIC_BASE_URL": "https://glm-provider.example.com/api/anthropic",
-        "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}",
-        "ANTHROPIC_MODEL": "glm-5.1"
-      }
-    },
-    "codex-mini": {
-      "provider": "codex",
-      "model": "gpt-5.4-mini",
-      "env": {
-        "OPENAI_API_KEY": "${OPENAI_API_KEY}"
+    "claude": {
+      "cc-glm": {
+        "env": {
+          "ANTHROPIC_BASE_URL": "https://glm-provider.example.com/api/anthropic",
+          "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}",
+          "ANTHROPIC_MODEL": "glm-5.1"
+        }
       }
     }
   }
@@ -108,13 +100,13 @@ Example:
 
 ## Profile Rules
 
-- `provider: "claude"` runs `claude`.
-- `provider: "codex"` runs `codex`.
+- Profiles are grouped under `profiles.claude`.
+- Profile names must be unique across all provider groups.
 - Claude profiles pass `env` through runtime `--settings '{"env": ...}'`, matching Claude Code's native settings mechanism. Set the Claude model with `env.ANTHROPIC_MODEL`.
-- `model` for Codex is passed as `--model <model>`.
 - `env` values only apply to the launched process.
 - `${VAR_NAME}` values are expanded from your current shell environment.
 - Claude profiles can also expand token variables such as `${ANTHROPIC_AUTH_TOKEN}` from `~/.claude/settings.json` when they are not set in the shell.
+- Codex and Hermes profiles are not supported yet.
 
 ## Claude Model Overrides
 
@@ -138,13 +130,14 @@ Example:
 ```json
 {
   "profiles": {
-    "cc-xiaomi": {
-      "provider": "claude",
-      "env": {
-        "ANTHROPIC_BASE_URL": "https://token-plan-sgp.xiaomimimo.com/anthropic",
-        "ANTHROPIC_AUTH_TOKEN": "${XIAOMI_ANTHROPIC_AUTH_TOKEN}",
-        "ANTHROPIC_MODEL": "mimo-v2.5-pro",
-        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "mimo-v2.5"
+    "claude": {
+      "cc-xiaomi": {
+        "env": {
+          "ANTHROPIC_BASE_URL": "https://token-plan-sgp.xiaomimimo.com/anthropic",
+          "ANTHROPIC_AUTH_TOKEN": "${XIAOMI_ANTHROPIC_AUTH_TOKEN}",
+          "ANTHROPIC_MODEL": "mimo-v2.5-pro",
+          "ANTHROPIC_DEFAULT_HAIKU_MODEL": "mimo-v2.5"
+        }
       }
     }
   }
@@ -162,7 +155,6 @@ Before running a profile, configure the token environment variables referenced b
 export ANTHROPIC_AUTH_TOKEN="..."
 export GEMINI_ANTHROPIC_AUTH_TOKEN="..."
 export XIAOMI_ANTHROPIC_AUTH_TOKEN="..."
-export OPENAI_API_KEY="..."
 ```
 
 Put long-lived variables in `~/.zshrc` if you want them available in every shell.
