@@ -1,0 +1,2 @@
+include README_cn.md
+recursive-include docs *.md

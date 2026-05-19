@@ -4,9 +4,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-import aweswitch
+from aweswitch import cli as aweswitch
 
 
 class AweSwitchTests(unittest.TestCase):
@@ -21,6 +21,14 @@ class AweSwitchTests(unittest.TestCase):
             self.assertIn("claude", data["profiles"])
             self.assertIn("cc-glm", data["profiles"]["claude"])
             self.assertNotIn("codex", data["profiles"])
+
+    def test_package_entry_point_targets_cli_main(self):
+        pyproject_path = Path(__file__).resolve().parents[1] / "pyproject.toml"
+
+        data = pyproject_path.read_text()
+
+        self.assertIn('version = "0.1.0"', data)
+        self.assertIn('aweswitch = "aweswitch.cli:main"', data)
 
     def test_prepare_claude_uses_provider_command_and_env_overrides(self):
         config = {
