@@ -1,0 +1,27 @@
+{
+  "profiles": {
+    "claude": {
+      "cc-glm": {
+        "env": {
+          "ANTHROPIC_BASE_URL": "https://glm-provider.example.com/api/anthropic",
+          "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}",
+          "ANTHROPIC_MODEL": "glm-5.1"
+        }
+      },
+      "cc-gemini": {
+        "env": {
+          "ANTHROPIC_BASE_URL": "https://gemini-provider.example.com/anthropic",
+          "ANTHROPIC_AUTH_TOKEN": "${GEMINI_ANTHROPIC_AUTH_TOKEN}",
+          "ANTHROPIC_MODEL": "gemini-3.1-pro-preview"
+        }
+      },
+      "cc-xiaomi": {
+        "env": {
+          "ANTHROPIC_BASE_URL": "https://xiaomi-provider.example.com/anthropic",
+          "ANTHROPIC_AUTH_TOKEN": "${XIAOMI_ANTHROPIC_AUTH_TOKEN}",
+          "ANTHROPIC_MODEL": "mimo-v2.5-pro"
+        }
+      }
+    }
+  }
+}

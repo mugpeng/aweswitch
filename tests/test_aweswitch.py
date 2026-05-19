@@ -4,9 +4,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from click.testing import CliRunner
 
-import aweswitch
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from aweswitch import cli as aweswitch
 
 
 class AweSwitchTests(unittest.TestCase):
@@ -18,18 +20,66 @@ class AweSwitchTests(unittest.TestCase):
 
             data = json.loads(path.read_text())
             self.assertIn("profiles", data)
-            self.assertIn("cc-glm", data["profiles"])
+            self.assertIn("claude", data["profiles"])
+            self.assertIn("cc-glm", data["profiles"]["claude"])
+            self.assertNotIn("codex", data["profiles"])
+
+    def test_package_entry_point_targets_cli_main(self):
+        pyproject_path = Path(__file__).resolve().parents[1] / "pyproject.toml"
+
+        data = pyproject_path.read_text()
+
+        self.assertIn('version = "0.1.1"', data)
+        self.assertIn('aweswitch = "aweswitch.cli:main"', data)
+        self.assertIn('dependencies = ["click>=8.1"]', data)
+
+    def test_main_help_uses_click_command_layout(self):
+        result = CliRunner().invoke(aweswitch.cli, ["-h"])
+
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("Usage: aweswitch [OPTIONS] COMMAND [ARGS]...", result.output)
+        self.assertIn("Agent profile switcher for launching isolated runtime configs.", result.output)
+        self.assertIn("-v, --version", result.output)
+        self.assertIn("list", result.output)
+        self.assertIn("config", result.output)
+        self.assertIn("help", result.output)
+
+    def test_version_option(self):
+        result = CliRunner().invoke(aweswitch.cli, ["-v"])
+
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("0.1.1", result.output)
+
+    def test_config_help_uses_click_command_layout(self):
+        result = CliRunner().invoke(aweswitch.cli, ["config", "-h"])
+
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("Usage: aweswitch config [OPTIONS] COMMAND [ARGS]...", result.output)
+        self.assertIn("Manage aweswitch config.", result.output)
+        self.assertIn("path", result.output)
+        self.assertIn("show", result.output)
+        self.assertIn("edit", result.output)
+        self.assertIn("init", result.output)
+        self.assertIn("help", result.output)
+
+    def test_help_command_can_show_config_help(self):
+        result = CliRunner().invoke(aweswitch.cli, ["help", "config"])
+
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("Usage: aweswitch config [OPTIONS] COMMAND [ARGS]...", result.output)
+        self.assertIn("Manage aweswitch config.", result.output)
 
     def test_prepare_claude_uses_provider_command_and_env_overrides(self):
         config = {
             "profiles": {
-                "cc-glm": {
-                    "provider": "claude",
-                    "env": {
-                        "ANTHROPIC_BASE_URL": "${GLM_BASE}",
-                        "ANTHROPIC_AUTH_TOKEN": "${GLM_TOKEN}",
-                        "ANTHROPIC_MODEL": "glm-5.1",
-                    },
+                "claude": {
+                    "cc-glm": {
+                        "env": {
+                            "ANTHROPIC_BASE_URL": "${GLM_BASE}",
+                            "ANTHROPIC_AUTH_TOKEN": "${GLM_TOKEN}",
+                            "ANTHROPIC_MODEL": "glm-5.1",
+                        },
+                    }
                 }
             }
         }
@@ -57,13 +107,14 @@ class AweSwitchTests(unittest.TestCase):
     def test_prepare_claude_can_expand_from_claude_settings_env(self):
         config = {
             "profiles": {
-                "cc-glm": {
-                    "provider": "claude",
-                    "env": {
-                        "ANTHROPIC_BASE_URL": "${ANTHROPIC_BASE_URL}",
-                        "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}",
-                        "ANTHROPIC_MODEL": "glm-5.1",
-                    },
+                "claude": {
+                    "cc-glm": {
+                        "env": {
+                            "ANTHROPIC_BASE_URL": "${ANTHROPIC_BASE_URL}",
+                            "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}",
+                            "ANTHROPIC_MODEL": "glm-5.1",
+                        },
+                    }
                 }
             }
         }
@@ -90,13 +141,14 @@ class AweSwitchTests(unittest.TestCase):
     def test_prepare_claude_only_uses_settings_env_for_model(self):
         config = {
             "profiles": {
-                "cc-glm": {
-                    "provider": "claude",
-                    "env": {
-                        "ANTHROPIC_BASE_URL": "https://example.test",
-                        "ANTHROPIC_AUTH_TOKEN": "secret",
-                        "ANTHROPIC_MODEL": "glm-5.1",
-                    },
+                "claude": {
+                    "cc-glm": {
+                        "env": {
+                            "ANTHROPIC_BASE_URL": "https://example.test",
+                            "ANTHROPIC_AUTH_TOKEN": "secret",
+                            "ANTHROPIC_MODEL": "glm-5.1",
+                        },
+                    }
                 }
             }
         }
@@ -120,14 +172,15 @@ class AweSwitchTests(unittest.TestCase):
     def test_prepare_claude_ignores_top_level_model(self):
         config = {
             "profiles": {
-                "cc-glm": {
-                    "provider": "claude",
-                    "model": "ignored-model",
-                    "env": {
-                        "ANTHROPIC_BASE_URL": "https://example.test",
-                        "ANTHROPIC_AUTH_TOKEN": "secret",
-                        "ANTHROPIC_MODEL": "glm-5.1",
-                    },
+                "claude": {
+                    "cc-glm": {
+                        "model": "ignored-model",
+                        "env": {
+                            "ANTHROPIC_BASE_URL": "https://example.test",
+                            "ANTHROPIC_AUTH_TOKEN": "secret",
+                            "ANTHROPIC_MODEL": "glm-5.1",
+                        },
+                    }
                 }
             }
         }
@@ -138,31 +191,37 @@ class AweSwitchTests(unittest.TestCase):
         self.assertNotIn("--model", argv)
         self.assertNotIn("ignored-model", argv)
 
-    def test_prepare_codex_uses_model_flag_without_config_args(self):
+    def test_prepare_rejects_codex_profiles_for_now(self):
         config = {
             "profiles": {
-                "codex-mini": {
-                    "provider": "codex",
-                    "model": "gpt-5.4-mini",
-                    "env": {"OPENAI_API_KEY": "${OPENAI_API_KEY}"},
+                "codex": {
+                    "codex-mini": {
+                        "model": "gpt-5.4-mini",
+                        "env": {"OPENAI_API_KEY": "${OPENAI_API_KEY}"},
+                    }
                 }
             }
         }
-        base_env = {"OPENAI_API_KEY": "secret"}
 
-        argv, env = aweswitch.prepare_run(config, "codex-mini", ["--help"], base_env)
-
-        self.assertEqual(argv, ["codex", "--model", "gpt-5.4-mini", "--help"])
-        self.assertEqual(env["OPENAI_API_KEY"], "secret")
+        with self.assertRaisesRegex(SystemExit, "unsupported provider"):
+            aweswitch.prepare_run(config, "codex-mini", ["--help"], {})
 
     def test_profile_model_label_uses_anthropic_model_for_claude(self):
         self.assertEqual(
-            aweswitch.profile_model_label({
-                "provider": "claude",
-                "env": {"ANTHROPIC_MODEL": "glm-5.1"},
-            }),
+            aweswitch.profile_model_label("claude", {"env": {"ANTHROPIC_MODEL": "glm-5.1"}}),
             "glm-5.1",
         )
+
+    def test_profile_for_errors_on_duplicate_profile_names(self):
+        config = {
+            "profiles": {
+                "claude": {"default": {"env": {}}},
+                "codex": {"default": {"env": {}}},
+            }
+        }
+
+        with self.assertRaisesRegex(SystemExit, "ambiguous profile"):
+            aweswitch.profile_for(config, "default")
 
     def test_redact_hides_secret_values(self):
         data = {
