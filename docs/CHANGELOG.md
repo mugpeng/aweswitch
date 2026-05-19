@@ -1,39 +1,5 @@
 # change log
 
-## v0.1.0
-
-`v0.1.0` is the first package-oriented release line for aweswitch. The project now installs as a Python package with a console-script entry point, while keeping the CLI intentionally small and dependency-free at runtime.
-
-### Python package installation
-
-aweswitch now uses a `pyproject.toml` package definition with a `src/aweswitch/` layout. The command is exposed through the package entry point:
-
-```toml
-[project.scripts]
-aweswitch = "aweswitch.cli:main"
-```
-
-The default config template is bundled as package data, so `aweswitch config init` works after `pip install aweswitch` without copying files by hand.
-
-### Agent profile switcher positioning
-
-The project positioning was broadened from a Claude Code-only profile switcher to an agent profile switcher. The executable provider set remains intentionally limited to Claude Code for now.
-
-### Similar tools
-
-The README now calls out [cc-switch](https://github.com/farion1231/cc-switch) as a similar Claude Code switching tool and explains how aweswitch currently differs: smaller Python package, local JSON profiles, runtime-only Claude Code `--settings`, and redacted inspection commands.
-
-### Highlights
-
-- Started versioning at `v0.1.0`
-- Added `pyproject.toml`
-- Moved implementation into `src/aweswitch/cli.py`
-- Added the `aweswitch = "aweswitch.cli:main"` console script
-- Bundled `default-config.json` as package data
-- Updated README badges in the aweskill style
-- Repositioned aweswitch as an agent profile switcher
-- Added a similar-tools note for `cc-switch`
-
 ## v0.1.1
 
 `v0.1.1` merges the `dev` branch into `main`. Profiles are now grouped under provider keys, the default config is Claude-only, and both README files include a hero image.
@@ -80,3 +46,37 @@ The README files were reworked around the same structure used by the larger awes
 ## initial line
 
 Earlier commits introduced the single-file Python launcher, externalized the default config template, added tests, inherited token values from Claude settings when needed, switched Claude profile env injection to runtime `--settings`, and documented Claude model override behavior.
+
+## v0.1.0
+
+`v0.1.0` is the first package-oriented release line for aweswitch. The project now installs as a Python package with a console-script entry point, while keeping the CLI intentionally small and dependency-free at runtime.
+
+### Python package installation
+
+aweswitch now uses a `pyproject.toml` package definition with a `src/aweswitch/` layout. The command is exposed through the package entry point:
+
+```toml
+[project.scripts]
+aweswitch = "aweswitch.cli:main"
+```
+
+The default config template is bundled as package data, so `aweswitch config init` works after `pip install aweswitch` without copying files by hand.
+
+### Agent profile switcher positioning
+
+The project positioning was broadened from a Claude Code-only profile switcher to an agent profile switcher. The executable provider set remains intentionally limited to Claude Code for now.
+
+### Similar tools
+
+The README now calls out [cc-switch](https://github.com/farion1231/cc-switch) as a similar Claude Code switching tool and explains how aweswitch currently differs: smaller Python package, local JSON profiles, runtime-only Claude Code `--settings`, and redacted inspection commands.
+
+### Highlights
+
+- Started versioning at `v0.1.0`
+- Added `pyproject.toml`
+- Moved implementation into `src/aweswitch/cli.py`
+- Added the `aweswitch = "aweswitch.cli:main"` console script
+- Bundled `default-config.json` as package data
+- Updated README badges in the aweskill style
+- Repositioned aweswitch as an agent profile switcher
+- Added a similar-tools note for `cc-switch`
