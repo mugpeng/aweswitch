@@ -1,4 +1,5 @@
 <div align="center">
+  <img src="logo/hero.png" alt="aweswitch" width="600">
   <h1>aweswitch: Agent Profile Switcher</h1>
   <p><strong>A tiny local launcher for switching AI agent runtime profiles.</strong></p>
   <p>Start different agent sessions with different API endpoints, tokens, and models without rewriting global agent config.</p>

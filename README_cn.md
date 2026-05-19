@@ -1,4 +1,5 @@
 <div align="center">
+  <img src="logo/hero.png" alt="aweswitch" width="600">
   <h1>aweswitch: Agent Profile Switcher</h1>
   <p><strong>一个很小的本地启动器，用来切换 AI agent 运行时 profile。</strong></p>
   <p>用不同 API、token 和模型启动不同 agent 会话，同时不改写全局 agent 配置。</p>
