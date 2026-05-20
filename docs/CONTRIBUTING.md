@@ -73,10 +73,15 @@ The stable config shape is:
 Current rules:
 
 - `claude` is the only executable provider.
+- `profiles` must be a JSON object.
+- Each provider group under `profiles` must be a JSON object.
+- Each profile must be a JSON object.
+- Profile `env` values must be JSON objects when present.
 - Profile names must be unique across provider groups.
 - Claude profiles are passed through runtime `--settings`.
 - Environment references use `${VAR_NAME}`.
 - Shell environment values take precedence over values loaded from `~/.claude/settings.json`.
+- Invalid `~/.claude/settings.json` content is ignored by the current implementation. If a profile depends on values from that file, expect the later `${VAR_NAME}` expansion error to surface the missing variable.
 
 ## Documentation
 
@@ -100,15 +105,31 @@ If a change affects command output or config parsing, add or update tests in `te
 
 ## Releasing
 
-There is no automated release pipeline yet. Versioning starts at `v0.1.0`.
+Releases are automated through GitHub Actions. The release path is:
 
-For now:
+1. Prepare release changes on `dev`.
+2. Merge `dev` into `main`.
+3. Push a `v*` tag from `main`.
+4. Let `.github/workflows/release.yml` create the GitHub Release and publish to PyPI.
 
-1. Update `docs/CHANGELOG.md`.
-2. Commit the change on `dev`.
-3. Merge `dev` into `main` when ready.
-4. Build the package with `python3 -m build`.
-5. Upload with `python3 -m twine upload dist/*` when publishing to PyPI.
+Before tagging a release:
+
+- Update `pyproject.toml` and `src/aweswitch/__init__.py` to the target version.
+- Update release-sensitive README references, including version badges and wheel examples.
+- Add a top-level `## vX.Y.Z` entry to `docs/CHANGELOG.md`.
+- Verify the tag name matches the package version, for example `v0.1.4` for version `0.1.4`.
+- Confirm the repository has `PYPI_API_TOKEN` configured as a GitHub Actions secret.
+
+Recommended local checks:
+
+```bash
+python3 -m unittest discover -s tests
+python3 -m py_compile src/aweswitch/cli.py tests/test_aweswitch.py
+python3 -m build
+python3 -m twine check dist/*
+```
+
+The release workflow intentionally fails if it cannot find the matching changelog entry. Do not manually create the GitHub Release for a tagged release; the workflow owns that step.
 
 ## Questions
 
