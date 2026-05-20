@@ -14,6 +14,11 @@ from aweswitch import cli as aweswitch
 
 
 class AweSwitchTests(unittest.TestCase):
+    def assert_settings_file_secure(self, path):
+        if os.name == "nt":
+            return
+        self.assertEqual(stat.S_IMODE(os.stat(path).st_mode), 0o600)
+
     def test_init_creates_example_config(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "config.json"
@@ -96,7 +101,7 @@ class AweSwitchTests(unittest.TestCase):
         self.assertEqual(argv[1], "--settings")
         settings_path = argv[2]
         self.assertTrue(os.path.isfile(settings_path))
-        self.assertEqual(stat.S_IMODE(os.stat(settings_path).st_mode), 0o600)
+        self.assert_settings_file_secure(settings_path)
         self.assertEqual(json.loads(Path(settings_path).read_text()), {
             "env": {
                 "ANTHROPIC_BASE_URL": "https://example.test",
@@ -135,7 +140,7 @@ class AweSwitchTests(unittest.TestCase):
         self.assertEqual(argv[1], "--settings")
         settings_path = argv[2]
         self.assertTrue(os.path.isfile(settings_path))
-        self.assertEqual(stat.S_IMODE(os.stat(settings_path).st_mode), 0o600)
+        self.assert_settings_file_secure(settings_path)
         self.assertEqual(json.loads(Path(settings_path).read_text()), {
             "env": {
                 "ANTHROPIC_BASE_URL": "https://example.test",
@@ -168,7 +173,7 @@ class AweSwitchTests(unittest.TestCase):
         self.assertEqual(argv[1], "--settings")
         settings_path = argv[2]
         self.assertTrue(os.path.isfile(settings_path))
-        self.assertEqual(stat.S_IMODE(os.stat(settings_path).st_mode), 0o600)
+        self.assert_settings_file_secure(settings_path)
         self.assertEqual(json.loads(Path(settings_path).read_text()), {
             "env": {
                 "ANTHROPIC_BASE_URL": "https://example.test",
@@ -255,7 +260,7 @@ class AweSwitchTests(unittest.TestCase):
     def test_editor_argv_splits_editor_with_flags(self):
         argv = aweswitch.editor_argv("code -w", Path("/tmp/config.json"))
 
-        self.assertEqual(argv, ["code", "-w", "/tmp/config.json"])
+        self.assertEqual(argv, ["code", "-w", str(Path("/tmp/config.json"))])
 
     def test_exec_agent_reports_missing_command(self):
         with self.assertRaisesRegex(SystemExit, "command not found"):
