@@ -1,4 +1,6 @@
 import json
+import os
+import stat
 import sys
 import tempfile
 import unittest
@@ -29,7 +31,7 @@ class AweSwitchTests(unittest.TestCase):
 
         data = pyproject_path.read_text()
 
-        self.assertIn('version = "0.1.1"', data)
+        self.assertRegex(data, r'version = "\d+\.\d+\.\d+"')
         self.assertIn('aweswitch = "aweswitch.cli:main"', data)
         self.assertIn('dependencies = ["click>=8.1"]', data)
 
@@ -45,10 +47,13 @@ class AweSwitchTests(unittest.TestCase):
         self.assertIn("help", result.output)
 
     def test_version_option(self):
+        import aweswitch as pkg
+        expected_version = pkg.__version__
+
         result = CliRunner().invoke(aweswitch.cli, ["-v"])
 
         self.assertEqual(result.exit_code, 0)
-        self.assertIn("0.1.1", result.output)
+        self.assertIn(expected_version, result.output)
 
     def test_config_help_uses_click_command_layout(self):
         result = CliRunner().invoke(aweswitch.cli, ["config", "-h"])
@@ -87,18 +92,19 @@ class AweSwitchTests(unittest.TestCase):
 
         argv, env = aweswitch.prepare_run(config, "cc-glm", ["--verbose"], base_env)
 
-        self.assertEqual(argv, [
-            "claude",
-            "--settings",
-            json.dumps({
-                "env": {
-                    "ANTHROPIC_BASE_URL": "https://example.test",
-                    "ANTHROPIC_AUTH_TOKEN": "secret",
-                    "ANTHROPIC_MODEL": "glm-5.1",
-                }
-            }),
-            "--verbose",
-        ])
+        self.assertEqual(argv[0], "claude")
+        self.assertEqual(argv[1], "--settings")
+        settings_path = argv[2]
+        self.assertTrue(os.path.isfile(settings_path))
+        self.assertEqual(stat.S_IMODE(os.stat(settings_path).st_mode), 0o600)
+        self.assertEqual(json.loads(Path(settings_path).read_text()), {
+            "env": {
+                "ANTHROPIC_BASE_URL": "https://example.test",
+                "ANTHROPIC_AUTH_TOKEN": "secret",
+                "ANTHROPIC_MODEL": "glm-5.1",
+            }
+        })
+        self.assertEqual(argv[3:], ["--verbose"])
         self.assertNotIn("ANTHROPIC_MODEL", env)
         self.assertNotIn("ANTHROPIC_BASE_URL", env)
         self.assertNotIn("ANTHROPIC_AUTH_TOKEN", env)
@@ -125,17 +131,18 @@ class AweSwitchTests(unittest.TestCase):
 
         argv, env = aweswitch.prepare_run(config, "cc-glm", [], {}, claude_settings_env)
 
-        self.assertEqual(argv, [
-            "claude",
-            "--settings",
-            json.dumps({
-                "env": {
-                    "ANTHROPIC_BASE_URL": "https://example.test",
-                    "ANTHROPIC_AUTH_TOKEN": "secret",
-                    "ANTHROPIC_MODEL": "glm-5.1",
-                }
-            }),
-        ])
+        self.assertEqual(argv[0], "claude")
+        self.assertEqual(argv[1], "--settings")
+        settings_path = argv[2]
+        self.assertTrue(os.path.isfile(settings_path))
+        self.assertEqual(stat.S_IMODE(os.stat(settings_path).st_mode), 0o600)
+        self.assertEqual(json.loads(Path(settings_path).read_text()), {
+            "env": {
+                "ANTHROPIC_BASE_URL": "https://example.test",
+                "ANTHROPIC_AUTH_TOKEN": "secret",
+                "ANTHROPIC_MODEL": "glm-5.1",
+            }
+        })
         self.assertEqual(env, {})
 
     def test_prepare_claude_only_uses_settings_env_for_model(self):
@@ -157,17 +164,18 @@ class AweSwitchTests(unittest.TestCase):
         argv, env = aweswitch.prepare_run(config, "cc-glm", [], base_env)
 
         self.assertEqual(env["ANTHROPIC_MODEL"], "old-model")
-        self.assertEqual(argv, [
-            "claude",
-            "--settings",
-            json.dumps({
-                "env": {
-                    "ANTHROPIC_BASE_URL": "https://example.test",
-                    "ANTHROPIC_AUTH_TOKEN": "secret",
-                    "ANTHROPIC_MODEL": "glm-5.1",
-                }
-            }),
-        ])
+        self.assertEqual(argv[0], "claude")
+        self.assertEqual(argv[1], "--settings")
+        settings_path = argv[2]
+        self.assertTrue(os.path.isfile(settings_path))
+        self.assertEqual(stat.S_IMODE(os.stat(settings_path).st_mode), 0o600)
+        self.assertEqual(json.loads(Path(settings_path).read_text()), {
+            "env": {
+                "ANTHROPIC_BASE_URL": "https://example.test",
+                "ANTHROPIC_AUTH_TOKEN": "secret",
+                "ANTHROPIC_MODEL": "glm-5.1",
+            }
+        })
 
     def test_prepare_claude_ignores_top_level_model(self):
         config = {
