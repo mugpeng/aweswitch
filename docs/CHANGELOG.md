@@ -1,5 +1,21 @@
 # change log
 
+## v0.1.3
+
+`v0.1.3` adds the GitHub Actions release path for aweswitch. The repository now has the same basic CI and tag-driven release structure used by aweskill, adapted for Python packaging and PyPI publishing.
+
+### GitHub Actions release automation
+
+Pushing a `v*` tag now runs the release workflow: it verifies the tag matches the package version, runs the test suite, builds the wheel and source distribution, checks package metadata, extracts release notes from this changelog, creates the GitHub Release, and publishes to PyPI with the configured `PYPI_API_TOKEN` secret.
+
+### Highlights
+
+- Added CI workflow for Python 3.9 and 3.13 across Linux, macOS, and Windows
+- Added package build and `twine check` validation to CI
+- Added tag-triggered release workflow for GitHub Releases and PyPI publishing
+- Added a tag/package version consistency check before publishing
+- Updated release-sensitive README version references
+
 ## v0.1.2
 
 `v0.1.2` switches Claude profile settings injection from inline JSON to a temporary file. This keeps API tokens out of the process listing.
