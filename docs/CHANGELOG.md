@@ -1,5 +1,20 @@
 # change log
 
+## v0.1.2
+
+`v0.1.2` switches Claude profile settings injection from inline JSON to a temporary file. This keeps API tokens out of the process listing.
+
+### Settings file injection
+
+Previously, `aweswitch` passed `--settings '{"env": {...}}'` directly on the command line, which meant tokens were visible in `ps` output. Now it writes the settings object to a temporary file with `0o600` permissions and passes the file path to Claude Code instead.
+
+### Highlights
+
+- Settings written to a temporary file instead of inline JSON
+- Temp file created with `0o600` permissions
+- Tests updated for the new settings file approach
+- Added PyPI downloads and GitHub stars badges to both READMEs
+
 ## v0.1.1
 
 `v0.1.1` merges the `dev` branch into `main`. Profiles are now grouped under provider keys, the default config is Claude-only, and both README files include a hero image.

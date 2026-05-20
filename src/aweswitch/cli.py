@@ -5,6 +5,7 @@ import os
 import re
 import shlex
 import shutil
+import tempfile
 from pathlib import Path
 
 import click
@@ -100,6 +101,14 @@ def profile_for(config, name):
     return provider, profile
 
 
+def write_settings_file(data):
+    fd, path = tempfile.mkstemp(prefix="aweswitch-settings-", suffix=".json")
+    os.chmod(fd, 0o600)
+    with os.fdopen(fd, "w") as f:
+        json.dump(data, f)
+    return Path(path)
+
+
 def prepare_run(config, profile_name, user_args, base_env=None, claude_settings_env=None):
     base_env = dict(os.environ if base_env is None else base_env)
     provider, profile = profile_for(config, profile_name)
@@ -114,7 +123,8 @@ def prepare_run(config, profile_name, user_args, base_env=None, claude_settings_
         argv = ["claude"]
         settings_env = {key: expand_value(value, expansion_env) for key, value in profile_env.items()}
         if settings_env:
-            argv += ["--settings", json.dumps({"env": settings_env})]
+            settings_path = write_settings_file({"env": settings_env})
+            argv += ["--settings", str(settings_path)]
         argv += user_args
     else:
         die(f"unsupported provider for {profile_name}: {provider}")
