@@ -103,7 +103,7 @@ def profile_for(config, name):
 
 def write_settings_file(data):
     fd, path = tempfile.mkstemp(prefix="aweswitch-settings-", suffix=".json")
-    os.chmod(fd, 0o600)
+    os.chmod(path, 0o600)
     with os.fdopen(fd, "w") as f:
         json.dump(data, f)
     return Path(path)
