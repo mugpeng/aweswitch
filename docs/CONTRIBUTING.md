@@ -9,7 +9,7 @@ The project should stay focused on that job. Prefer changes that make profile sw
 Clone the repository and run the tests:
 
 ```bash
-git clone https://github.com/mugpeng/aweswitch.git
+git clone https://github.com/Webioinfo01/aweswitch.git
 cd aweswitch
 python3 -m pip install -e .
 python3 tests/test_aweswitch.py
